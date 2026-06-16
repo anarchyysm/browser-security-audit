@@ -1,0 +1,44 @@
+name: Build Executables
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller plyvel leveldb
+      
+      - name: Build Linux executable
+        if: runner.os == 'Linux'
+        run: |
+          pyinstaller --onefile --name audit-linux audit.sh
+          ls -la dist/
+      
+      - name: Build macOS executable
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller --onefile --name audit-macos audit.sh
+          ls -la dist/
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: executables-${{ runner.os }}
+          path: dist/audit-*
+
