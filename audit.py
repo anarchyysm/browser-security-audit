@@ -238,12 +238,10 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='Browser Security Audit Tool')
-    parser.add_argument('--keychain', '-k', action='store_true', 
+    parser.add_argument('--keychain', '-k', action='store_true',
                        help='Use Keychain access (macOS)')
     parser.add_argument('--force', '-f', action='store_true',
                        help='Skip authorization confirmation')
-    parser.add_argument('--help', '-h', action='help',
-                       help='Show this help message')
     
     args = parser.parse_args()
     
