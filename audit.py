@@ -281,6 +281,28 @@ class BrowserAudit:
         if found_any:
             print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
 
+    def filter_display_content(self, content, filename):
+        if 'discord_tokens' in filename or 'discord_web' in filename:
+            return content
+
+        important_domains = ['claude.ai', 'discord', 'instagram', 'chatgpt']
+        lines = content.split('\n')
+        filtered = []
+        include_block = False
+
+        for i, line in enumerate(lines):
+            if line.startswith('Domain:'):
+                domain = line.split('Domain:')[1].strip().lower()
+                include_block = any(d in domain for d in important_domains)
+
+            if include_block:
+                filtered.append(line)
+                if i + 1 < len(lines) and lines[i + 1].strip() == '':
+                    filtered.append('')
+                    include_block = False
+
+        return '\n'.join(filtered).strip()
+
     def display_results(self):
         print(f"\n{self.COLORS['BLUE']}{'=' * 60}{self.COLORS['RESET']}")
         print(f"{self.COLORS['BLUE']}{'EXTRACTED SENSITIVE DATA':^60}{self.COLORS['RESET']}")
@@ -304,7 +326,11 @@ class BrowserAudit:
                     with open(filepath, 'r') as f:
                         content = f.read().strip()
                         if content:
-                            print(f"{self.COLORS['YELLOW']}{content}{self.COLORS['RESET']}")
+                            filtered = self.filter_display_content(content, filename)
+                            if filtered:
+                                print(f"{self.COLORS['YELLOW']}{filtered}{self.COLORS['RESET']}")
+                            else:
+                                print(f"{self.COLORS['CYAN']}(no data found for main domains){self.COLORS['RESET']}")
                         else:
                             print(f"{self.COLORS['CYAN']}(no data found){self.COLORS['RESET']}")
                 except Exception as e:
