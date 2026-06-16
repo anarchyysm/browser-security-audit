@@ -54,26 +54,29 @@ class BrowserAudit:
             sys.exit(1)
 
     def close_browsers(self):
-        browsers = ['chrome', 'firefox', 'zen']
+        import time
+
+        browsers = ['chrome', 'firefox', 'zen', 'Discord']
         running = []
-        
+
         for browser in browsers:
             try:
-                result = subprocess.run(['pgrep', '-x', browser], 
+                result = subprocess.run(['pgrep', '-i', browser],
                                       capture_output=True)
                 if result.returncode == 0:
-                    running.append(browser.capitalize())
+                    running.append(browser)
             except:
                 pass
-        
+
         if running:
             print(f"\n[!] Closing browsers: {', '.join(running)}")
             for browser in browsers:
                 try:
-                    subprocess.run(['pkill', '-9', browser], 
+                    subprocess.run(['pkill', '-9', '-i', browser],
                                  capture_output=True)
                 except:
                     pass
+            time.sleep(1)
             print("[OK] Browsers closed\n")
             self.log("INFO", "Browsers closed automatically")
 
