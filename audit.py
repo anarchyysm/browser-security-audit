@@ -9,6 +9,16 @@ from datetime import datetime
 from pathlib import Path
 
 class BrowserAudit:
+    COLORS = {
+        'RESET': '\033[0m',
+        'RED': '\033[91m',
+        'GREEN': '\033[92m',
+        'YELLOW': '\033[93m',
+        'BLUE': '\033[94m',
+        'MAGENTA': '\033[95m',
+        'CYAN': '\033[96m',
+    }
+
     def __init__(self, force_run=False, use_keychain=False):
         self.force_run = force_run
         self.use_keychain = use_keychain
@@ -34,23 +44,23 @@ class BrowserAudit:
     def check_authorization(self):
         if self.force_run:
             return
-            
-        print("\n[===========================================]")
-        print("|  BROWSER AUDIT - RESPONSIBLE USE ONLY  |")
-        print("[===========================================]\n")
-        print("This tool extracts SENSITIVE data:")
-        print("  - Authentication tokens")
-        print("  - Session cookies")
-        print("  - localStorage data")
-        print("  - Stored credentials\n")
-        print("AUTHORIZED USE ONLY:")
-        print("  - Your own systems")
-        print("  - Systems with explicit permission")
-        print("  - Test/development environments\n")
-        
+
+        print(f"\n{self.COLORS['RED']}[===========================================]{self.COLORS['RESET']}")
+        print(f"{self.COLORS['RED']}|  BROWSER AUDIT - RESPONSIBLE USE ONLY  |{self.COLORS['RESET']}")
+        print(f"{self.COLORS['RED']}[===========================================]{self.COLORS['RESET']}\n")
+        print(f"{self.COLORS['YELLOW']}This tool extracts SENSITIVE data:{self.COLORS['RESET']}")
+        print(f"  - Authentication tokens")
+        print(f"  - Session cookies")
+        print(f"  - localStorage data")
+        print(f"  - Stored credentials\n")
+        print(f"{self.COLORS['YELLOW']}AUTHORIZED USE ONLY:{self.COLORS['RESET']}")
+        print(f"  - Your own systems")
+        print(f"  - Systems with explicit permission")
+        print(f"  - Test/development environments\n")
+
         response = input("Do you have authorization? (y/n): ").strip().lower()
         if response != 'y':
-            print("Audit cancelled.")
+            print(f"{self.COLORS['RED']}Audit cancelled.{self.COLORS['RESET']}")
             sys.exit(1)
 
     def close_browsers(self):
@@ -69,7 +79,7 @@ class BrowserAudit:
                 pass
 
         if running:
-            print(f"\n[!] Closing browsers: {', '.join(running)}")
+            print(f"\n{self.COLORS['YELLOW']}[!] Closing browsers: {', '.join(running)}{self.COLORS['RESET']}")
             for browser in browsers:
                 try:
                     subprocess.run(['pkill', '-9', '-i', browser],
@@ -77,7 +87,7 @@ class BrowserAudit:
                 except:
                     pass
             time.sleep(1)
-            print("[OK] Browsers closed\n")
+            print(f"{self.COLORS['GREEN']}[OK] Browsers closed{self.COLORS['RESET']}\n")
             self.log("INFO", "Browsers closed automatically")
 
     def extract_chrome_cookies(self):
@@ -85,22 +95,22 @@ class BrowserAudit:
             path = self.home / "Library/Application Support/Google/Chrome/Default/Cookies"
         else:
             path = self.home / ".config/google-chrome/Default/Cookies"
-        
+
         if not path.exists():
             return
-        
-        print("[*] Extracting Chrome cookies...")
+
+        print(f"{self.COLORS['CYAN']}[*] Extracting Chrome cookies...{self.COLORS['RESET']}")
         try:
             conn = sqlite3.connect(path)
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM cookies LIMIT 50")
-            
+
             with open(self.cookies_dir / "chrome_cookies.txt", 'w') as f:
                 for row in cursor.fetchall():
                     f.write(str(row) + '\n')
-            
+
             conn.close()
-            print("[OK] Chrome cookies extracted\n")
+            print(f"{self.COLORS['GREEN']}[OK] Chrome cookies extracted{self.COLORS['RESET']}\n")
         except Exception as e:
             self.log("ERROR", f"Chrome extraction failed: {e}")
 
@@ -109,11 +119,11 @@ class BrowserAudit:
             profile_dir = self.home / "Library/Application Support/Firefox/Profiles"
         else:
             profile_dir = self.home / ".mozilla/firefox"
-        
+
         if not profile_dir.exists():
             return
-        
-        print("[*] Extracting Firefox cookies...")
+
+        print(f"{self.COLORS['CYAN']}[*] Extracting Firefox cookies...{self.COLORS['RESET']}")
         try:
             for subdir in profile_dir.glob("*default*/"):
                 cookies_file = subdir / "cookies.sqlite"
@@ -121,14 +131,14 @@ class BrowserAudit:
                     conn = sqlite3.connect(cookies_file)
                     cursor = conn.cursor()
                     cursor.execute("SELECT * FROM moz_cookies LIMIT 50")
-                    
+
                     with open(self.cookies_dir / "firefox_cookies.txt", 'w') as f:
                         for row in cursor.fetchall():
                             f.write(str(row) + '\n')
-                    
+
                     conn.close()
-            
-            print("[OK] Firefox cookies extracted\n")
+
+            print(f"{self.COLORS['GREEN']}[OK] Firefox cookies extracted{self.COLORS['RESET']}\n")
         except Exception as e:
             self.log("ERROR", f"Firefox extraction failed: {e}")
 
@@ -140,11 +150,11 @@ class BrowserAudit:
                 zen_dir = self.home / ".zen"
             else:
                 zen_dir = self.home / ".config/zen/Profiles"
-        
+
         if not zen_dir.exists():
             return
-        
-        print("[*] Extracting Zen cookies...")
+
+        print(f"{self.COLORS['CYAN']}[*] Extracting Zen cookies...{self.COLORS['RESET']}")
         try:
             for profile_dir in zen_dir.glob("*/"):
                 cookies_file = profile_dir / "cookies.sqlite"
@@ -152,14 +162,14 @@ class BrowserAudit:
                     conn = sqlite3.connect(cookies_file)
                     cursor = conn.cursor()
                     cursor.execute("SELECT * FROM moz_cookies LIMIT 50")
-                    
+
                     with open(self.cookies_dir / "zen_cookies.txt", 'w') as f:
                         for row in cursor.fetchall():
                             f.write(str(row) + '\n')
-                    
+
                     conn.close()
-            
-            print("[OK] Zen cookies extracted\n")
+
+            print(f"{self.COLORS['GREEN']}[OK] Zen cookies extracted{self.COLORS['RESET']}\n")
         except Exception as e:
             self.log("ERROR", f"Zen extraction failed: {e}")
 
@@ -171,7 +181,7 @@ class BrowserAudit:
         except ImportError:
             return
 
-        print("[*] Extracting Discord Desktop tokens...")
+        print(f"{self.COLORS['CYAN']}[*] Extracting Discord Desktop tokens...{self.COLORS['RESET']}")
 
         if self.os_type == 'darwin':
             discord_dirs = {
@@ -220,12 +230,12 @@ class BrowserAudit:
                 self.log("ERROR", f"Discord extraction failed: {e}")
 
         if found_any:
-            print("[OK] Discord tokens extracted\n")
+            print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
 
     def display_results(self):
-        print("\n[===========================================]")
-        print("    EXTRACTED DATA")
-        print("[===========================================]\n")
+        print(f"\n{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}")
+        print(f"{self.COLORS['BLUE']}    EXTRACTED DATA{self.COLORS['RESET']}")
+        print(f"{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}\n")
 
         files_to_display = [
             ("chrome_cookies.txt", "Chrome Cookies"),
@@ -237,26 +247,26 @@ class BrowserAudit:
         for filename, title in files_to_display:
             filepath = self.cookies_dir / filename
             if filepath.exists():
-                print(f"\n[{title}]")
-                print("-" * 50)
+                print(f"\n{self.COLORS['MAGENTA']}[{title}]{self.COLORS['RESET']}")
+                print(f"{self.COLORS['BLUE']}{'-' * 50}{self.COLORS['RESET']}")
                 try:
                     with open(filepath, 'r') as f:
                         content = f.read().strip()
                         if content:
-                            print(content)
+                            print(f"{self.COLORS['YELLOW']}{content}{self.COLORS['RESET']}")
                         else:
-                            print("(no data found)")
+                            print(f"{self.COLORS['CYAN']}(no data found){self.COLORS['RESET']}")
                 except Exception as e:
-                    print(f"Error reading {filename}: {e}")
+                    print(f"{self.COLORS['RED']}Error reading {filename}: {e}{self.COLORS['RESET']}")
             else:
-                print(f"\n[{title}]")
-                print("-" * 50)
-                print("(no data found)")
+                print(f"\n{self.COLORS['MAGENTA']}[{title}]{self.COLORS['RESET']}")
+                print(f"{self.COLORS['BLUE']}{'-' * 50}{self.COLORS['RESET']}")
+                print(f"{self.COLORS['CYAN']}(no data found){self.COLORS['RESET']}")
 
     def run(self):
-        print("\n[===========================================]")
-        print("    Browser Security Audit Tool")
-        print("[===========================================]\n")
+        print(f"\n{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}")
+        print(f"{self.COLORS['BLUE']}    Browser Security Audit Tool{self.COLORS['RESET']}")
+        print(f"{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}\n")
 
         self.check_authorization()
         self.close_browsers()
@@ -270,9 +280,9 @@ class BrowserAudit:
 
         self.display_results()
 
-        print("\n[===========================================]")
-        print(f"Output: {self.audit_dir}")
-        print("[===========================================]\n")
+        print(f"\n{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}")
+        print(f"{self.COLORS['GREEN']}Output: {self.audit_dir}{self.COLORS['RESET']}")
+        print(f"{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}\n")
 
         self.log("INFO", "Audit completed successfully")
 
