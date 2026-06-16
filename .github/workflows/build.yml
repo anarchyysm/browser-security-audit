@@ -21,8 +21,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install pyinstaller plyvel leveldb
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install leveldb
+
+      - name: Install Python dependencies
+        run: pip install pyinstaller plyvel
 
       - name: Build Linux executable
         if: runner.os == 'Linux'
