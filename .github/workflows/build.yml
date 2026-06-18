@@ -34,27 +34,19 @@ jobs:
 
       - name: Install Python dependencies (macOS)
         if: runner.os == 'macOS'
-        run: |
-          pip install pyinstaller plyvel leveldb
-          pip install pyinstaller-hooks-contrib
+        run: pip install pyinstaller plyvel
 
       - name: Install Python dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libleveldb-dev libleveldb1
-          pip install pyinstaller plyvel leveldb
-          pip install pyinstaller-hooks-contrib
+          pip install pyinstaller plyvel
 
       - name: Build Linux executable
         if: runner.os == 'Linux'
         run: |
-          pyinstaller --onefile \
-            --hidden-import=plyvel \
-            --hidden-import=leveldb \
-            --collect-all=plyvel \
-            --name audit-linux \
-            audit.py
+          pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
           ls -la dist/
 
       - name: Verify Linux build
@@ -66,12 +58,7 @@ jobs:
       - name: Build macOS executable
         if: runner.os == 'macOS'
         run: |
-          pyinstaller --onefile \
-            --hidden-import=plyvel \
-            --hidden-import=leveldb \
-            --collect-all=plyvel \
-            --name audit-macos \
-            audit.py
+          pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
           ls -la dist/
 
       - name: Verify macOS build
