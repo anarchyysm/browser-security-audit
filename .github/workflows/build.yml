@@ -25,30 +25,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install system dependencies (macOS)
-        if: runner.os == 'macOS'
+      - name: Install dependencies and build
         run: |
-          brew install leveldb
-          echo "LDFLAGS=-L/opt/homebrew/opt/leveldb/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I/opt/homebrew/opt/leveldb/include" >> $GITHUB_ENV
-
-      - name: Install Python dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: pip install pyinstaller plyvel
-
-      - name: Install Python dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libleveldb-dev libleveldb1
-          pip install pyinstaller plyvel
-
-      - name: Build executables
-        run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
-          else
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install leveldb
+            export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
+            export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
+            pip install pyinstaller plyvel
             pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
+          else
+            sudo apt-get update
+            sudo apt-get install -y libleveldb-dev libleveldb1
+            pip install pyinstaller plyvel
+            pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
           fi
           ls -la dist/
 
