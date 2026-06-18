@@ -8,6 +8,13 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+# macOS: ensure leveldb library can be found by plyvel
+if sys.platform == 'darwin':
+    leveldb_lib_path = '/opt/homebrew/opt/leveldb/lib'
+    if os.path.exists(leveldb_lib_path):
+        dyld_path = os.environ.get('DYLD_LIBRARY_PATH', '')
+        os.environ['DYLD_LIBRARY_PATH'] = f"{leveldb_lib_path}:{dyld_path}" if dyld_path else leveldb_lib_path
+
 class BrowserAudit:
     COLORS = {
         'RESET': '\033[0m',
