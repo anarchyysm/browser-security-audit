@@ -42,13 +42,13 @@ jobs:
       - name: Build Linux executable
         if: runner.os == 'Linux'
         run: |
-          pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
+          pyinstaller --onefile --name audit-linux audit.py
           ls -la dist/
 
       - name: Build macOS executable
         if: runner.os == 'macOS'
         run: |
-          pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
+          pyinstaller --onefile --name audit-macos audit.py
           ls -la dist/
 
       - name: Upload artifacts

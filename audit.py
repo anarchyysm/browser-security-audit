@@ -237,10 +237,17 @@ class BrowserAudit:
     def extract_discord_tokens(self):
         try:
             import plyvel
+        except ImportError:
+            print(f"{self.COLORS['YELLOW']}[!] Discord Desktop tokens require plyvel library{self.COLORS['RESET']}")
+            print(f"{self.COLORS['YELLOW']}    Install with: pip install plyvel{self.COLORS['RESET']}\n")
+            self.log("WARNING", "plyvel not available - Discord Desktop token extraction skipped")
+            return
+
+        try:
             import shutil
             import tempfile
         except ImportError:
-            self.log("ERROR", "plyvel library not available for Discord token extraction")
+            self.log("ERROR", "Required libraries not available")
             return
 
         print(f"{self.COLORS['CYAN']}[*] Extracting Discord Desktop tokens...{self.COLORS['RESET']}")
