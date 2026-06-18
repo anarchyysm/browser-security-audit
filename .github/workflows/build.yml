@@ -28,10 +28,8 @@ jobs:
       - name: Install system and Python dependencies
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
-            brew install leveldb
-            export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
-            export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
-            pip install pyinstaller plyvel
+            pip install pyinstaller
+            pip install --prefer-binary plyvel 2>/dev/null || echo "plyvel unavailable on macOS, Discord tokens disabled"
           else
             sudo apt-get update
             sudo apt-get install -y libleveldb-dev libleveldb1
@@ -41,9 +39,7 @@ jobs:
       - name: Build executable
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
-            export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
-            export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
-            pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
+            pyinstaller --onefile --name audit-macos audit.py
           else
             pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
           fi
