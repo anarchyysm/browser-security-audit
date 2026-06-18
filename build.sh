@@ -42,9 +42,22 @@ if [ "$OS" = "macos" ]; then
     export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
     export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
 else
-    echo "[*] Installing Linux dependencies via apt..."
-    sudo apt-get update
-    sudo apt-get install -y libleveldb-dev libleveldb1d
+    echo "[*] Installing Linux dependencies..."
+
+    if command -v pacman &> /dev/null; then
+        echo "[*] Detected Arch Linux, using pacman..."
+        sudo pacman -Sy leveldb
+    elif command -v apt-get &> /dev/null; then
+        echo "[*] Detected Debian/Ubuntu, using apt..."
+        sudo apt-get update
+        sudo apt-get install -y libleveldb-dev libleveldb1d
+    elif command -v dnf &> /dev/null; then
+        echo "[*] Detected Fedora/RHEL, using dnf..."
+        sudo dnf install -y leveldb-devel
+    else
+        echo "[ERROR] Could not detect Linux package manager. Supported: pacman, apt-get, dnf"
+        exit 1
+    fi
 fi
 
 echo "[*] Installing Python dependencies..."
