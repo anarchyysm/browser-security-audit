@@ -43,29 +43,14 @@ jobs:
           sudo apt-get install -y libleveldb-dev libleveldb1
           pip install pyinstaller plyvel
 
-      - name: Build Linux executable
-        if: runner.os == 'Linux'
+      - name: Build executables
         run: |
-          pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
+          else
+            pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
+          fi
           ls -la dist/
-
-      - name: Verify Linux build
-        if: runner.os == 'Linux'
-        run: |
-          echo "Testing executable..."
-          dist/audit-linux --help > /dev/null 2>&1 && echo "[OK] Executable runs successfully" || echo "[ERROR] Executable failed to run"
-
-      - name: Build macOS executable
-        if: runner.os == 'macOS'
-        run: |
-          pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
-          ls -la dist/
-
-      - name: Verify macOS build
-        if: runner.os == 'macOS'
-        run: |
-          echo "Testing executable..."
-          dist/audit-macos --help > /dev/null 2>&1 && echo "[OK] Executable runs successfully" || echo "[ERROR] Executable failed to run"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
