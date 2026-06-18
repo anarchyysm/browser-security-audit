@@ -14,9 +14,17 @@ else
 fi
 
 echo "[*] OS detected: $OS"
-echo "[*] Creating Python virtual environment..."
 
-# Create venv
+# Check Python availability
+if ! command -v python3 &> /dev/null; then
+    echo "[ERROR] Python 3 not found. Install Python 3.11+ first."
+    exit 1
+fi
+
+PYTHON_VERSION=$(python3 --version)
+echo "[*] Using: $PYTHON_VERSION"
+
+echo "[*] Creating Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
 
