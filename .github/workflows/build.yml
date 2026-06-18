@@ -32,7 +32,7 @@ jobs:
             pip install --prefer-binary plyvel 2>/dev/null || echo "plyvel unavailable on macOS, Discord tokens disabled"
           else
             sudo apt-get update
-            sudo apt-get install -y libleveldb-dev libleveldb1
+            sudo apt-get install -y libleveldb-dev libleveldb1d
             pip install pyinstaller plyvel
           fi
 
