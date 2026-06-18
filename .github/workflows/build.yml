@@ -56,6 +56,20 @@ jobs:
             audit.py
           ls -la dist/
 
+      - name: Verify Linux build
+        if: runner.os == 'Linux'
+        run: |
+          echo "Checking if plyvel is included..."
+          if strings dist/audit-linux | grep -q "plyvel"; then
+            echo "[OK] plyvel found in executable"
+          else
+            echo "[WARNING] plyvel not found in executable"
+          fi
+
+          echo ""
+          echo "Testing executable..."
+          dist/audit-linux --help > /dev/null 2>&1 && echo "[OK] Executable runs successfully" || echo "[ERROR] Executable failed to run"
+
       - name: Build macOS executable
         if: runner.os == 'macOS'
         run: |
@@ -66,6 +80,20 @@ jobs:
             --name audit-macos \
             audit.py
           ls -la dist/
+
+      - name: Verify macOS build
+        if: runner.os == 'macOS'
+        run: |
+          echo "Checking if plyvel is included..."
+          if strings dist/audit-macos | grep -q "plyvel"; then
+            echo "[OK] plyvel found in executable"
+          else
+            echo "[WARNING] plyvel not found in executable"
+          fi
+
+          echo ""
+          echo "Testing executable..."
+          dist/audit-macos --help > /dev/null 2>&1 && echo "[OK] Executable runs successfully" || echo "[ERROR] Executable failed to run"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
