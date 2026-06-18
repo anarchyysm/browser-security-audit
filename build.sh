@@ -70,10 +70,18 @@ pip install pyinstaller
 
 # Compile plyvel with correct linking flags
 if [ "$OS" = "macos" ]; then
-    echo "[*] Compiling plyvel with rpath for macOS..."
-    export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib -Wl,-rpath,/opt/homebrew/opt/leveldb/lib"
+    echo "[*] Compiling plyvel for macOS..."
+    export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
     export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
     pip install --no-cache-dir --force-reinstall --no-binary=plyvel plyvel
+
+    # Fix library references with install_name_tool
+    echo "[*] Fixing library references with install_name_tool..."
+    PLYVEL_SO=$(python3 -c "import plyvel; import os; print(os.path.dirname(plyvel.__file__))")/_plyvel*.so
+    if [ -f "$PLYVEL_SO" ]; then
+        install_name_tool -change /opt/homebrew/opt/leveldb/lib/libleveldb.1.dylib @loader_path/../../../leveldb/lib/libleveldb.1.dylib "$PLYVEL_SO" 2>/dev/null || true
+        install_name_tool -add_rpath /opt/homebrew/opt/leveldb/lib "$PLYVEL_SO" 2>/dev/null || true
+    fi
 else
     echo "[*] Installing plyvel (pre-compiled)..."
     pip install plyvel
