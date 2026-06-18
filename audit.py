@@ -28,7 +28,7 @@ class BrowserAudit:
 
     def setup_output_dirs(self):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.audit_dir = Path(__file__).parent / "audit_output"
+        self.audit_dir = self.home / ".audit"
         self.audit_dir.mkdir(exist_ok=True)
         self.cookies_dir = self.audit_dir / f"cookies_{timestamp}"
         self.cookies_dir.mkdir(exist_ok=True)
