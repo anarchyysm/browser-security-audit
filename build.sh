@@ -15,6 +15,11 @@ fi
 
 echo "[*] OS detected: $OS"
 
+# macOS: set leveldb path early
+if [ "$OS" = "macos" ]; then
+    export DYLD_LIBRARY_PATH="/opt/homebrew/opt/leveldb/lib:$DYLD_LIBRARY_PATH"
+fi
+
 # Check Python availability
 if ! command -v python3 &> /dev/null; then
     echo "[ERROR] Python 3 not found. Install Python 3.11+ first."
@@ -41,7 +46,6 @@ if [ "$OS" = "macos" ]; then
     brew install leveldb
     export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
     export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
-    export DYLD_LIBRARY_PATH="/opt/homebrew/opt/leveldb/lib:$DYLD_LIBRARY_PATH"
 else
     echo "[*] Installing Linux dependencies..."
 
