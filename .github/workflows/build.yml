@@ -23,27 +23,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.14'
-
-      - name: Install system and Python dependencies
-        run: |
-          if [ "$RUNNER_OS" = "macOS" ]; then
-            pip install pyinstaller
-            pip install .github/wheels/plyvel-*.whl
-          else
-            sudo apt-get update
-            sudo apt-get install -y libleveldb-dev libleveldb1d
-            pip install pyinstaller plyvel
-          fi
+          python-version: '3.11'
 
       - name: Build executable
-        run: |
-          if [ "$RUNNER_OS" = "macOS" ]; then
-            pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
-          else
-            pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
-          fi
-          ls -la dist/
+        run: bash build.sh
+        env:
+          PYTHONUNBUFFERED: 1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
