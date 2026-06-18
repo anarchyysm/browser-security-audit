@@ -29,7 +29,7 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
             pip install pyinstaller
-            pip install --prefer-binary plyvel 2>/dev/null || echo "plyvel unavailable on macOS, Discord tokens disabled"
+            pip install .github/wheels/plyvel-*.whl
           else
             sudo apt-get update
             sudo apt-get install -y libleveldb-dev libleveldb1d
@@ -39,7 +39,7 @@ jobs:
       - name: Build executable
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
-            pyinstaller --onefile --name audit-macos audit.py
+            pyinstaller --onefile --hidden-import=plyvel --name audit-macos audit.py
           else
             pyinstaller --onefile --hidden-import=plyvel --name audit-linux audit.py
           fi
