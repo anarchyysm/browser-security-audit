@@ -66,7 +66,18 @@ else
 fi
 
 echo "[*] Installing Python dependencies..."
-pip install pyinstaller plyvel
+pip install pyinstaller
+
+# Compile plyvel with correct linking flags
+if [ "$OS" = "macos" ]; then
+    echo "[*] Compiling plyvel with rpath for macOS..."
+    export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib -Wl,-rpath,/opt/homebrew/opt/leveldb/lib"
+    export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
+    pip install --no-cache-dir --force-reinstall --no-binary=plyvel plyvel
+else
+    echo "[*] Installing plyvel (pre-compiled)..."
+    pip install plyvel
+fi
 
 echo "[*] Verifying plyvel installation..."
 python3 -c "import plyvel; print(f'plyvel {plyvel.__version__} OK')" || {
