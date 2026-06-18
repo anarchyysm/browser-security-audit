@@ -63,8 +63,18 @@ fi
 echo "[*] Installing Python dependencies..."
 pip install pyinstaller plyvel
 
+echo "[*] Verifying plyvel installation..."
+python3 -c "import plyvel; print(f'plyvel {plyvel.__version__} OK')" || {
+    echo "[WARNING] plyvel not available, continuing without Discord support"
+}
+
 echo "[*] Building executable: $BINARY_NAME"
-pyinstaller --onefile --hidden-import=plyvel --name "$BINARY_NAME" audit.py
+pyinstaller \
+    --onefile \
+    --hidden-import=plyvel \
+    --collect-all=plyvel \
+    --name "$BINARY_NAME" \
+    audit.py
 
 echo ""
 echo "=== Build Complete ==="
