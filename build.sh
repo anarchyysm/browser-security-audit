@@ -38,14 +38,7 @@ pip install --upgrade pip setuptools wheel
 
 # Install system dependencies
 if [ "$OS" = "macos" ]; then
-    echo "[*] Installing macOS dependencies via Homebrew..."
-    if ! command -v brew &> /dev/null; then
-        echo "[ERROR] Homebrew not found. Install from https://brew.sh"
-        exit 1
-    fi
-    brew install leveldb
-    export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
-    export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
+    echo "[*] No system dependencies needed for macOS"
 else
     echo "[*] Installing Linux dependencies..."
 
@@ -68,22 +61,8 @@ fi
 echo "[*] Installing Python dependencies..."
 pip install pyinstaller
 
-# Install plyvel (Discord token extraction)
-if [ "$OS" = "macos" ]; then
-    echo "[*] macOS: Discord token extraction not supported (leveldb linking issues)"
-    echo "[*] All other features work normally!"
-else
-    echo "[*] Installing plyvel for Discord token extraction..."
-    pip install plyvel
-fi
-
 echo "[*] Building executable: $BINARY_NAME"
-pyinstaller \
-    --onefile \
-    --hidden-import=plyvel \
-    --collect-all=plyvel \
-    --name "$BINARY_NAME" \
-    audit.py
+pyinstaller --onefile --name "$BINARY_NAME" audit.py
 
 echo ""
 echo "=== Build Complete ==="
