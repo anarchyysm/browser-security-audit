@@ -286,7 +286,7 @@ class BrowserAudit:
             }
 
         found_any = False
-        token_pattern = r'[\w-]{24}\.[\w-]{6}\.[\w-]{27}|mfa\.[a-zA-Z0-9_\-]{84}'
+        token_pattern = r'[A-Za-z0-9_-]{20,}\.[\w-]{6}\.[\w-]{27}|mfa\.[a-zA-Z0-9_\-]{84}'
         hex_pattern = r'[a-f0-9]{32,}'
 
         for app_name, discord_dir in discord_dirs.items():
