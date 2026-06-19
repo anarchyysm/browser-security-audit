@@ -77,10 +77,13 @@ if [ "$OS" = "macos" ]; then
 
     # Fix library references with install_name_tool
     echo "[*] Fixing library references with install_name_tool..."
-    PLYVEL_SO=$(python3 -c "import plyvel; import os; print(os.path.dirname(plyvel.__file__))")/_plyvel*.so
+    PLYVEL_SO=$(find ./venv -name "_plyvel*.so" 2>/dev/null | head -1)
     if [ -f "$PLYVEL_SO" ]; then
-        install_name_tool -change /opt/homebrew/opt/leveldb/lib/libleveldb.1.dylib @loader_path/../../../leveldb/lib/libleveldb.1.dylib "$PLYVEL_SO" 2>/dev/null || true
+        echo "[*] Found: $PLYVEL_SO"
         install_name_tool -add_rpath /opt/homebrew/opt/leveldb/lib "$PLYVEL_SO" 2>/dev/null || true
+        otool -L "$PLYVEL_SO" | grep -q leveldb && echo "[✓] Library references fixed" || echo "[!] Check if references are correct"
+    else
+        echo "[!] Could not find _plyvel.so"
     fi
 else
     echo "[*] Installing plyvel (pre-compiled)..."
