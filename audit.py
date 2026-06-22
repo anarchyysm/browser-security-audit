@@ -19,27 +19,41 @@ class BrowserAudit:
         'CYAN': '\033[96m',
     }
 
-    def __init__(self, force_run=False, use_keychain=False):
+    def __init__(self, force_run=False, use_keychain=False, no_log=False):
         self.force_run = force_run
         self.use_keychain = use_keychain
+        self.no_log = no_log
         self.os_type = sys.platform
         self.home = Path.home()
         self.setup_output_dirs()
 
     def setup_output_dirs(self):
+        if self.no_log:
+            self.audit_dir = None
+            self.cookies_dir = None
+            self.log_file = None
+            return
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.audit_dir = self.home / ".audit"
         self.audit_dir.mkdir(exist_ok=True)
         self.cookies_dir = self.audit_dir / f"cookies_{timestamp}"
         self.cookies_dir.mkdir(exist_ok=True)
         self.log_file = self.audit_dir / f"audit_{timestamp}.log"
-        
+
     def log(self, level, message):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_msg = f"[{timestamp}] [{level}] {message}"
         print(log_msg)
-        with open(self.log_file, 'a') as f:
-            f.write(log_msg + '\n')
+        if not self.no_log and self.log_file:
+            with open(self.log_file, 'a') as f:
+                f.write(log_msg + '\n')
+
+    def save_to_file(self, filename, content):
+        if self.no_log or not self.cookies_dir:
+            return
+        with open(self.cookies_dir / filename, 'a') as f:
+            f.write(content)
 
     def check_authorization(self):
         if self.force_run:
@@ -425,16 +439,18 @@ class BrowserAudit:
 
 def main():
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Browser Security Audit Tool')
     parser.add_argument('--keychain', '-k', action='store_true',
                        help='Use Keychain access (macOS)')
     parser.add_argument('--force', '-f', action='store_true',
                        help='Skip authorization confirmation')
-    
+    parser.add_argument('--no-log', action='store_true',
+                       help='Do not save logs or cookie files (output only)')
+
     args = parser.parse_args()
-    
-    audit = BrowserAudit(force_run=args.force, use_keychain=args.keychain)
+
+    audit = BrowserAudit(force_run=args.force, use_keychain=args.keychain, no_log=args.no_log)
     audit.run()
 
 if __name__ == '__main__':
