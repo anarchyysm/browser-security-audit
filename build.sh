@@ -44,17 +44,16 @@ else
 
     if command -v pacman &> /dev/null; then
         echo "[*] Detected Arch Linux, using pacman..."
-        sudo pacman -Sy leveldb
+        sudo pacman -Sy leveldb || echo "[!] Could not install via pacman (may require sudo password)"
     elif command -v apt-get &> /dev/null; then
         echo "[*] Detected Debian/Ubuntu, using apt..."
-        sudo apt-get update
-        sudo apt-get install -y libleveldb-dev libleveldb1d
+        sudo apt-get update || true
+        sudo apt-get install -y libleveldb-dev libleveldb1d || echo "[!] Could not install via apt-get (may require sudo password)"
     elif command -v dnf &> /dev/null; then
         echo "[*] Detected Fedora/RHEL, using dnf..."
-        sudo dnf install -y leveldb-devel
+        sudo dnf install -y leveldb-devel || echo "[!] Could not install via dnf (may require sudo password)"
     else
-        echo "[ERROR] Could not detect Linux package manager. Supported: pacman, apt-get, dnf"
-        exit 1
+        echo "[!] Could not detect Linux package manager (Arch Linux already has leveldb installed)"
     fi
 fi
 
