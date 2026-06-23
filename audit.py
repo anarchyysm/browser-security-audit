@@ -19,10 +19,11 @@ class BrowserAudit:
         'CYAN': '\033[96m',
     }
 
-    def __init__(self, force_run=False, use_keychain=False, no_log=False):
+    def __init__(self, force_run=False, use_keychain=False, no_log=False, no_close=False):
         self.force_run = force_run
         self.use_keychain = use_keychain
         self.no_log = no_log
+        self.no_close = no_close
         self.os_type = sys.platform
         self.home = Path.home()
         self.setup_output_dirs()
@@ -416,7 +417,8 @@ class BrowserAudit:
         print(f"{self.COLORS['BLUE']}[===========================================]{self.COLORS['RESET']}\n")
 
         self.check_authorization()
-        self.close_browsers()
+        if not self.no_close:
+            self.close_browsers()
 
         self.log("INFO", "Audit started")
 
@@ -446,10 +448,12 @@ def main():
                        help='Skip authorization confirmation')
     parser.add_argument('--no-log', action='store_true',
                        help='Do not save logs or cookie files (output only)')
+    parser.add_argument('--no-close', action='store_true',
+                       help='Do not close browsers before extraction')
 
     args = parser.parse_args()
 
-    audit = BrowserAudit(force_run=args.force, use_keychain=args.keychain, no_log=args.no_log)
+    audit = BrowserAudit(force_run=args.force, use_keychain=args.keychain, no_log=args.no_log, no_close=args.no_close)
     audit.run()
 
 if __name__ == '__main__':
