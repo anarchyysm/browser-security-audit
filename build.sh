@@ -15,11 +15,6 @@ fi
 
 echo "[*] OS detected: $OS"
 
-# macOS: set leveldb path early
-if [ "$OS" = "macos" ]; then
-    export DYLD_LIBRARY_PATH="/opt/homebrew/opt/leveldb/lib:$DYLD_LIBRARY_PATH"
-fi
-
 # Check Python availability
 if ! command -v python3 &> /dev/null; then
     echo "[ERROR] Python 3 not found. Install Python 3.11+ first."
@@ -35,27 +30,6 @@ source venv/bin/activate
 
 echo "[*] Upgrading pip..."
 pip install --upgrade pip setuptools wheel
-
-# Install system dependencies
-if [ "$OS" = "macos" ]; then
-    echo "[*] No system dependencies needed for macOS"
-else
-    echo "[*] Installing Linux dependencies..."
-
-    if command -v pacman &> /dev/null; then
-        echo "[*] Detected Arch Linux, using pacman..."
-        sudo pacman -Sy leveldb || echo "[!] Could not install via pacman (may require sudo password)"
-    elif command -v apt-get &> /dev/null; then
-        echo "[*] Detected Debian/Ubuntu, using apt..."
-        sudo apt-get update || true
-        sudo apt-get install -y libleveldb-dev libleveldb1d || echo "[!] Could not install via apt-get (may require sudo password)"
-    elif command -v dnf &> /dev/null; then
-        echo "[*] Detected Fedora/RHEL, using dnf..."
-        sudo dnf install -y leveldb-devel || echo "[!] Could not install via dnf (may require sudo password)"
-    else
-        echo "[!] Could not detect Linux package manager (Arch Linux already has leveldb installed)"
-    fi
-fi
 
 echo "[*] Installing Python dependencies..."
 pip install pyinstaller
